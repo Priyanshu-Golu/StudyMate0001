@@ -1,22 +1,19 @@
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel
 
+# User schemas
 class UserCreate(BaseModel):
-    email: EmailStr
+    email: str
     password: str
 
-class UserRead(BaseModel):
+class UserOut(BaseModel):
     id: int
-    email: EmailStr
+    email: str
 
-    model_config = {"from_attributes": True}
+    model_config = {
+        "from_attributes": True  # Pydantic V2
+    }
 
-class DocumentCreate(BaseModel):
-    filename: str
-    user_id: int
-
-class DocumentRead(BaseModel):
-    id: int
-    filename: str
-    user_id: int
-
-    model_config = {"from_attributes": True}
+# Token schema
+class Token(BaseModel):
+    access_token: str
+    token_type: str = "bearer"

@@ -27,7 +27,6 @@ from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_core.prompts import ChatPromptTemplate
 from langchain.chains.combine_documents import create_stuff_documents_chain
 from langchain.chains import create_retrieval_chain
-from .vectorstore import get_vector_db
 
 
 router = APIRouter(
@@ -50,7 +49,7 @@ class QueryResponse(BaseModel):
 
 
 DB_FILE = tempfile.NamedTemporaryFile(prefix="milvus_", suffix=".db", delete=False).name
-EMBEDDINGS_MODEL = GoogleGenerativeAIEmbeddings(model="models/embedding-001")
+EMBEDDINGS_MODEL = GoogleGenerativeAIEmbeddings(model="models/"gemini-embedding-001")
 VECTOR_DB_INSTANCE = None
 
 def get_vector_db():
@@ -67,41 +66,9 @@ def get_vector_db():
     return VECTOR_DB_INSTANCE
 
 
-@router.post("/upload/")
-async def upload_and_process_document(file: UploadFile = File(...)):
-    """
-    Uploads a document, processes it, and adds it to the knowledge base.
-    Supported formats: .pdf, .docx, .eml, .txt
-    """
-    file_path = os.path.join(UPLOAD_DIRECTORY, file.filename)
-    try:
-        # Save the uploaded file temporarily
-        with open(file_path, "wb") as buffer:
-            shutil.copyfileobj(file.file, buffer)
-
-        # Process and embed the document
-        num_chunks = services.process_and_embed_document(file_path)
-
-        return {
-            "message": f"Successfully uploaded and processed '{file.filename}'.",
-            "chunks_added": num_chunks,
-        }
-    except (FileNotFoundError, ValueError) as e:
-        raise HTTPException(status_code=400, detail=str(e))
-    except Exception as e:
-        raise HTTPException(
-            status_code=500, detail=f"An error occurred: {e}"
-        )
-    finally:
-        # Clean up the uploaded file
-        if os.path.exists(file_path):
-            os.remove(file_path)
-
-
 
 @router.post("/process/")
-async
-def process_document(filename: str) -> int:
+async def process_document(filename: str) -> int:
     """Loads a document from a file, splits it into chunks, and adds it to the vector store."""
     documents = []
     if not os.path.exists(filename):
@@ -119,7 +86,7 @@ def process_document(filename: str) -> int:
     else:
         raise ValueError(f"Unsupported file type: {file_extension}")
 
-    documents.extend(loader.load())
+    documents.extend(loader.lazy_load())
 
     text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=200)
     texts = text_splitter.split_documents(documents)
@@ -132,27 +99,6 @@ def process_document(filename: str) -> int:
     return len(ids)
 
 
-
-
-
-if __name__ == "__main__":
-    # Example usage for standalone testing
-    DUMMY_FILE = "test_rag.txt"
-    with open(DUMMY_FILE, "w") as f:
-        f.write("This is a test document about Gemini AI.")
-    
-    print(f"Processing and embedding '{DUMMY_FILE}'...")
-    num_chunks = process_document(DUMMY_FILE)
-    print(f"Added {num_chunks} chunks to the vector store.")
-    
-    db = get_vector_db()
-    query = str(input("Enter your Question: "))
-    docs = db.similarity_search(query)
-    print("\n--- Search Results ---")
-    for doc in docs:
-        print(doc.page_content)
-    
-    os.remove(DUMMY_FILE)
 
 MODEL = ChatGoogleGenerativeAI(model="gemini-2.5-flash", temperature=0.4)
 
@@ -205,3 +151,6 @@ Question: {input}""")
     # The 'invoke' method can be blocking, for a truly async API, consider 'ainvoke'
     output = await rag_chain.ainvoke({"input": query})
     return output
+
+
+if __name__ == "__main__":

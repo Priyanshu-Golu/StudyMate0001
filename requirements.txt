@@ -8,3 +8,9 @@ python-dotenv==1.0.1
 pydantic==2.6.0
 psycopg2 
 PyJWT==2.8.0
+langchain
+langchain-community
+beautifulsoup4
+langchain-milvus
+langchain-google-genai
+google.generativeai

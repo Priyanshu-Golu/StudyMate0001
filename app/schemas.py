@@ -1,19 +1,28 @@
-from pydantic import BaseModel
+from datetime import datetime
+from pydantic import BaseModel, EmailStr
 
-# User schemas
+# User
 class UserCreate(BaseModel):
-    email: str
+    email: EmailStr
     password: str
 
 class UserOut(BaseModel):
     id: int
-    email: str
+    email: EmailStr
+    created_at: datetime
 
-    model_config = {
-        "from_attributes": True  # Pydantic V2
-    }
+    model_config = {"from_attributes": True}
 
-# Token schema
+# Token
 class Token(BaseModel):
     access_token: str
-    token_type: str = "bearer"
+    token_type: str
+
+# Document
+class DocumentOut(BaseModel):
+    id: int
+    filename: str
+    storage_path: str
+    uploaded_at: str
+
+    model_config = {"from_attributes": True}
